@@ -20,10 +20,11 @@ bot.onText(/\/ideas/, async (msg) => {
     const ideas = await generateIdeas(5);
     let response = '📝 **5 Content Ideas:**\n\n';
     ideas.forEach((idea, i) => {
-      response += `${i+1}. ${idea}\n\n`;
+      response += `${i+1}. ${idea.title}\n   📌 Type: ${idea.type}\n\n`;
     });
     bot.sendMessage(msg.chat.id, response);
   } catch (error) {
+    console.error(error);
     bot.sendMessage(msg.chat.id, '❌ Error generating ideas');
   }
 });
