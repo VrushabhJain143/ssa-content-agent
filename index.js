@@ -29,13 +29,29 @@ bot.onText(/\/ideas/, async (msg) => {
       response += `${i+1}. ${idea.title}\n   📌 Type: ${idea.type}\n\n`;
     });
     
-    // Add approval buttons
+    // Add approval buttons for ALL 5 ideas
     const opts = {
       reply_markup: {
         inline_keyboard: [
           [
-            { text: '✅ Approve Idea 1', callback_data: `approve_0` },
+            { text: '✅ Idea 1', callback_data: `approve_0` },
             { text: '❌ Reject', callback_data: `reject_0` }
+          ],
+          [
+            { text: '✅ Idea 2', callback_data: `approve_1` },
+            { text: '❌ Reject', callback_data: `reject_1` }
+          ],
+          [
+            { text: '✅ Idea 3', callback_data: `approve_2` },
+            { text: '❌ Reject', callback_data: `reject_2` }
+          ],
+          [
+            { text: '✅ Idea 4', callback_data: `approve_3` },
+            { text: '❌ Reject', callback_data: `reject_3` }
+          ],
+          [
+            { text: '✅ Idea 5', callback_data: `approve_4` },
+            { text: '❌ Reject', callback_data: `reject_4` }
           ]
         ]
       }
@@ -61,15 +77,17 @@ bot.on('callback_query', async (query) => {
       // Generate caption and hashtags
       const post = await createCompletePost(approvedIdea, 'instagram');
       
-      const responseText = `✅ **Idea Approved!**\n\n📝 **Caption:**\n${post.caption}\n\n#️⃣ **Hashtags:**\n${post.hashtags}`;
+      const responseText = `✅ **Idea ${ideaIndex + 1} Approved!**\n\n📝 **Caption:**\n${post.caption}\n\n#️⃣ **Hashtags:**\n${post.hashtags}`;
       bot.sendMessage(chatId, responseText);
     } catch (error) {
-      const approvedIdea = currentIdeas[parseInt(data.split('_')[1])];
-      bot.sendMessage(chatId, `✅ Idea approved: ${approvedIdea.title}\n\n📝 Type: ${approvedIdea.type}`);
+      const ideaIndex = parseInt(data.split('_')[1]);
+      const approvedIdea = currentIdeas[ideaIndex];
+      bot.sendMessage(chatId, `✅ Idea ${ideaIndex + 1} approved: ${approvedIdea.title}\n\n📝 Type: ${approvedIdea.type}`);
     }
     bot.answerCallbackQuery(query.id);
   } else if (data.startsWith('reject_')) {
-    bot.sendMessage(chatId, '❌ Idea rejected. Generate new ideas with /ideas');
+    const ideaIndex = parseInt(data.split('_')[1]);
+    bot.sendMessage(chatId, `❌ Idea ${ideaIndex + 1} rejected. Generate new ideas with /ideas`);
     bot.answerCallbackQuery(query.id);
   }
 });
