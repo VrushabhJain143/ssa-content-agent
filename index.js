@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const TelegramBot = require('node-telegram-bot-api');
 const { generateIdeas } = require('./agents/ideator');
+const { createCompletePost } = require('./agents/hook-script');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -48,14 +49,24 @@ bot.onText(/\/ideas/, async (msg) => {
 });
 
 // Handle button clicks
-bot.on('callback_query', (query) => {
+bot.on('callback_query', async (query) => {
   const data = query.data;
   const chatId = query.message.chat.id;
   
   if (data.startsWith('approve_')) {
-    const ideaIndex = parseInt(data.split('_')[1]);
-    const approvedIdea = currentIdeas[ideaIndex];
-    bot.sendMessage(chatId, `✅ Idea approved: ${approvedIdea.title}\n\n📝 Type: ${approvedIdea.type}`);
+    try {
+      const ideaIndex = parseInt(data.split('_')[1]);
+      const approvedIdea = currentIdeas[ideaIndex];
+      
+      // Generate caption and hashtags
+      const post = await createCompletePost(approvedIdea, 'instagram');
+      
+      const responseText = `✅ **Idea Approved!**\n\n📝 **Caption:**\n${post.caption}\n\n#️⃣ **Hashtags:**\n${post.hashtags}`;
+      bot.sendMessage(chatId, responseText);
+    } catch (error) {
+      const approvedIdea = currentIdeas[parseInt(data.split('_')[1])];
+      bot.sendMessage(chatId, `✅ Idea approved: ${approvedIdea.title}\n\n📝 Type: ${approvedIdea.type}`);
+    }
     bot.answerCallbackQuery(query.id);
   } else if (data.startsWith('reject_')) {
     bot.sendMessage(chatId, '❌ Idea rejected. Generate new ideas with /ideas');
