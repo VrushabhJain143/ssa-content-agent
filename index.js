@@ -98,22 +98,37 @@ bot.on('callback_query', async (query) => {
   if (action === 'approve') {
     try {
       const approvedIdea = sessionData.ideas[ideaIndex];
-      const post = await createCompletePost(approvedIdea, 'instagram');
       
+      // Step 1: Generate Caption
+      const post = await createCompletePost(approvedIdea, 'instagram');
+      bot.sendMessage(chatId, `🎨 Generating image & posting to Instagram...`);
+      
+      // Step 2: Generate Image with DALL-E
+      const { generateImage } = require('./agents/openai-image-generator');
+      const imageUrl = await generateImage(post.caption);
+      
+      // Step 3: Publish to Instagram
+      const { publishToInstagram } = require('./agents/publisher');
+      const postId = await publishToInstagram(imageUrl, post.caption, post.hashtags);
+      
+      // Step 4: Update Data
       data_loaded.sessions[sessionId].approved = {
         ideaIndex: ideaIndex,
         ideaTitle: approvedIdea.title,
         caption: post.caption,
-        hashtags: post.hashtags
+        hashtags: post.hashtags,
+        imageUrl: imageUrl,
+        instagramPostId: postId
       };
       data_loaded.sessions[sessionId].approvedAt = new Date().toISOString();
       saveData(data_loaded);
       
-      const responseText = `✅ **Idea ${ideaIndex + 1} Approved!**\n\n📝 **Caption:**\n${post.caption}\n\n#️⃣ **Hashtags:**\n${post.hashtags}`;
+      // Step 5: Send Confirmation
+      const responseText = `✅ **Idea ${ideaIndex + 1} Posted to Instagram!**\n\n📝 **Caption:**\n${post.caption}\n\n#️⃣ **Hashtags:**\n${post.hashtags}\n\n🔗 **Post ID:** ${postId}`;
       bot.sendMessage(chatId, responseText);
     } catch (error) {
-      const approvedIdea = sessionData.ideas[ideaIndex];
-      bot.sendMessage(chatId, `✅ Idea ${ideaIndex + 1} approved: ${approvedIdea.title}\n\n📝 Type: ${approvedIdea.type}`);
+      console.error('Approval error:', error);
+      bot.sendMessage(chatId, `❌ Error: ${error.message}`);
     }
     bot.answerCallbackQuery(query.id);
   } else if (action === 'reject') {
