@@ -4,6 +4,12 @@ async function generateImageWithDALLE3(prompt) {
   try {
     const apiKey = process.env.OPENAI_API_KEY;
     
+    if (!apiKey) {
+      throw new Error('OPENAI_API_KEY not configured');
+    }
+
+    console.log('🎨 Generating image with DALL-E 3...');
+    
     const response = await axios.post('https://api.openai.com/v1/images/generations', {
       model: 'dall-e-3',
       prompt: prompt,
@@ -16,6 +22,8 @@ async function generateImageWithDALLE3(prompt) {
         'Content-Type': 'application/json'
       }
     });
+    
+    console.log('✅ Image generated successfully');
     
     return {
       success: true,
@@ -33,5 +41,5 @@ async function generateImageWithDALLE3(prompt) {
 }
 
 module.exports = {
-  generateImageWithDALLE3
+  generateImage: generateImageWithDALLE3
 };
