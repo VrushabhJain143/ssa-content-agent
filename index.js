@@ -5,6 +5,8 @@ const fs = require('fs');
 const path = require('path');
 const { generateIdeas } = require('./agents/ideator');
 const { createCompletePost } = require('./agents/hook-script');
+const { generateImageWithStability } = require('./agents/stability-image-generator');
+const { publishToInstagram } = require('./agents/publisher');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -103,13 +105,12 @@ bot.on('callback_query', async (query) => {
       const post = await createCompletePost(approvedIdea, 'instagram');
       bot.sendMessage(chatId, `🎨 Generating image & posting to Instagram...`);
       
-      // Step 2: Generate Image with DALL-E
-      const { generateImage } = require('./agents/openai-image-generator');
-      const imageUrl = await generateImage(post.caption);
+      // Step 2: Generate Image with Stability AI
+      const imageBase64 = await generateImageWithStability(post.caption);
+      const imageDataUrl = `data:image/png;base64,${imageBase64}`;
       
       // Step 3: Publish to Instagram
-      const { publishToInstagram } = require('./agents/publisher');
-      const postId = await publishToInstagram(imageUrl, post.caption, post.hashtags);
+      const postId = await publishToInstagram(imageDataUrl, post.caption, post.hashtags);
       
       // Step 4: Update Data
       data_loaded.sessions[sessionId].approved = {
@@ -117,7 +118,6 @@ bot.on('callback_query', async (query) => {
         ideaTitle: approvedIdea.title,
         caption: post.caption,
         hashtags: post.hashtags,
-        imageUrl: imageUrl,
         instagramPostId: postId
       };
       data_loaded.sessions[sessionId].approvedAt = new Date().toISOString();
